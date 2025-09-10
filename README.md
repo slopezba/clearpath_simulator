@@ -2,6 +2,8 @@
 
 This package provides simulation for Clearpath robots (e.g., **Husky A200 with UR5e arm and gripper**) in **ROS 2 Humble** using **Gazebo (Ignition Fortress)** and **MoveIt 2**.  
 
+> ⚠️ <span style="color:red">**Note:** Although the branch is named `jazzy`, this package works on **ROS 2 Humble**.</span>
+
 ---
 
 ## 📦 Setup
