@@ -1,84 +1,101 @@
-# clearpath_simulator
+# Clearpath Simulator
 
-## Setup
+This package provides simulation for Clearpath robots (e.g., **Husky A200 with UR5e arm and gripper**) in **ROS 2 Humble** using **Gazebo (Ignition Fortress)** and **MoveIt 2**.  
 
-Prerequisites:
-  - Install [ROS 2 Jazzy](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debians.html)
+---
 
-### Gazebo Harmonic
+## 📦 Setup
 
-See [Gazebo Installation](https://gazebosim.org/docs/latest/ros_installation/) for more information
-on installing Gazebo.
+### Prerequisites
+- Install [ROS 2 Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)
 
-```
-sudo apt-get install ros-${ROS_DISTRO}-ros-gz
-```
+### Install Ignition Fortress
 
-### Workspace
+```bash
+sudo apt-get update && sudo apt-get install wget
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+sudo apt-get update && sudo apt-get install ignition-fortress
 
-```
-mkdir ~/clearpath_ws/src -p
+Workspace
+
+mkdir -p ~/clearpath_ws/src
 cd ~/clearpath_ws/src
 git clone https://github.com/clearpathrobotics/clearpath_simulator.git
 cd ~/clearpath_ws
 rosdep install -r --from-paths src -i -y
 colcon build --symlink-install
-```
 
-### Setup path
+Setup Path
 
-```
-mkdir ~/clearpath
-```
+The simulator generates configuration files based on the clearpath folder.
+This folder must be placed inside your HOME directory (~/clearpath).
 
-Copy your `robot.yaml` into `~/clearpath`
+If it is not there, move it with:
 
-## Launch
+mv clearpath ~/clearpath
 
-```
-ros2 launch clearpath_gz simulation.launch.py
-```
+Copy your robot.yaml into ~/clearpath.
+🚀 Launch Simulation
 
-## Worlds
+Run the main simulation with RViz enabled:
 
-The `clearpath_gz` package includes several simulation worlds. To select a specific world, use the
-`world` launch parameter, e.g.
-```
-ros2 launch clearpath_gz simulation.launch.py world:=pipeline
-```
+ros2 launch clearpath_gz simulation.launch.py rviz:=true
 
-Available worlds are:
+This will:
 
-| World                 | Description                                                                                                            | Screenshots                  | Geographic Location      |
-|-----------------------|------------------------------------------------------------------------------------------------------------------------|------------------------------|--------------------------|
-| `construction`        | The same floorplan as the `office` world, but under construction. Features non-solid walls and debris piles.           | [link](docs/construction.md) | Waterloo ON, Canada      |
-| `office`              | The same floorplan as the `construction` world. Features narrow hallways, doorways, meeting rooms, and loading docks.  | [link](docs/office.md)       | Waterloo ON, Canada      |
-| `orchard`             | An outdoor, agricultural environment featuring rows of trees. The terrain has small slopes, but is mostly flat.        | [link](docs/orchard.md)      | Nikea, Greece            |
-| `pipeline`            | A rugged, outdoor environment featuring steeper hills, a river and bridge, a small cave, solar panels, and a pipeline. | [link](docs/pipeline.md)     | Northern Alberta, Canada |
-| `solar_farm`          | An outdoor, agricultural environmentf featuring gentle hills, a barn, rows of solar panels, and fences.                | [link](docs/solar_farm.md)   | Stonewall MB, Canada     |
-| `warehouse` (default) | A flat, indoor warehouse environment. Features shelves and people.                                                     | [link](docs/warehouse.md)    | Rio de Janeiro, Brazil   |
+    Start Gazebo (Fortress) with the Clearpath robot.
 
+    Launch ros_gz_bridge to connect Gazebo topics with ROS 2.
 
-## Creating Map Tiles
+    Spawn controllers for both the base and manipulator.
 
-The `orchard`, `pipeline`, and `solar_farm` worlds include geotagged TIF images in the `geotif`
-directory. These images can be used to generate map tiles of the simulation environment, if
-desired.
+    Open RViz2 for visualization.
 
-To generate the tiles, first install the `gdal-bin` package:
-```bash
-sudo apt install gdal-bin
-```
+🤖 Controllers
+1. Base Velocity Controller
 
-Then run the following command to generate the tiles:
-```bash
-gdal2tiles.py $(ros2 pkg prefix clearpath_gz)/share/clearpath_gz/geotif/WORLD_geo.tif
-```
-substituting `WORLD` with `orchard`, `pipeline`, or `solar_farm`.
+The robot base is controlled through the platform_velocity_controller, which listens on /a200_0000/cmd_vel.
 
-The generated files will be located in the current working directory in a new directory called
-`WORLD_geo` (e.g. `pipeline_geo`).
+Example (move forward at 0.3 m/s):
 
-Note that while the simulation worlds' locations have been chosen to be geographically similar to
-the envrionments depicted, the simulations are wholly fictional locations; the generated tiles
-will not mesh seamlessly into any satellite map of the region depicted.
+ros2 topic pub /a200_0000/cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.3}, angular: {z: 0.0}}" -r 10
+
+2. Arm Velocity Controller
+
+The UR5e arm has a velocity controller interface available at:
+
+/a200_0000/arm_0_velocity_controller/commands
+
+Example (move elbow joint at -0.2 rad/s):
+
+ros2 topic pub /a200_0000/arm_0_velocity_controller/commands \
+  std_msgs/msg/Float64MultiArray "{data: [0.0, 0.0, -0.2, 0.0, 0.0, 0.0]}"
+
+3. Gripper Controller
+
+The gripper is managed by a GripperActionController.
+By default, it is loaded as:
+
+/a200_0000/arm_0_gripper_controller
+
+📋 Notes
+
+    Always ensure ~/clearpath/robot.yaml defines your platform, arm, and gripper configuration.
+
+    The generated configs (URDF, SRDF, controllers) are created automatically when the simulator is launched.
+
+    If you want to add velocity controllers or modify limits, update the YAML configuration accordingly.
+
+✅ Summary
+
+With this setup, you can:
+
+    Simulate Clearpath robots in Gazebo Fortress.
+
+    Control the base with /cmd_vel.
+
+    Control the UR5e arm with velocity or trajectory controllers.
+
+    Operate the gripper through its dedicated action controller.
