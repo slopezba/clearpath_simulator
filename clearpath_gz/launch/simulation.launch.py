@@ -21,6 +21,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
 
 
 ARGUMENTS = [
@@ -83,8 +84,18 @@ def generate_launch_description():
             ('yaw', LaunchConfiguration('yaw'))]
     )
 
+    # 👉 Aquí añadimos el nodo tf_relay
+    tf_relay_node = Node(
+        package='clearpath_gz',
+        executable='tf_relay.py',   # nombre del script instalado
+        name='tf_relay',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+
     # Create launch description and add actions
     ld = LaunchDescription(ARGUMENTS)
     ld.add_action(gz_sim)
     ld.add_action(robot_spawn)
+    ld.add_action(tf_relay_node)
     return ld
