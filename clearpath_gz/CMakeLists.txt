@@ -15,6 +15,7 @@ install(
 
 install(PROGRAMS
   scripts/tf_relay.py
+  scripts/joint_states_filter.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

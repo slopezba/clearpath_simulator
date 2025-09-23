@@ -43,6 +43,10 @@ ARGUMENTS = [
     DeclareLaunchArgument('use_sim_time', default_value='true',
                           choices=['true', 'false'],
                           description='use_sim_time'),
+    DeclareLaunchArgument('rviz_config',
+                        default_value='/home/salva/clearpath_ws/src/clearpath_simulator/clearpath/config/robot.rviz',
+                        description='Path to RViz config file'
+                    ),
 ]
 
 for pose_element in ['x', 'y', 'yaw']:
@@ -93,9 +97,28 @@ def generate_launch_description():
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
 
+    joint_state_filter_node = Node(
+        package='clearpath_gz',
+        executable='joint_states_filter.py',   # nombre del script instalado
+        name='tf_relay',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+
+    rviz_node = Node(
+    package='rviz2',
+    executable='rviz2',
+    name='rviz2',
+    output='screen',
+    arguments=['-d', LaunchConfiguration('rviz_config')],
+    parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+)
+
     # Create launch description and add actions
     ld = LaunchDescription(ARGUMENTS)
     ld.add_action(gz_sim)
     ld.add_action(robot_spawn)
     ld.add_action(tf_relay_node)
+    ld.add_action(joint_state_filter_node)
+    ld.add_action(rviz_node)
     return ld
